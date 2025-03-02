@@ -27,22 +27,11 @@ with st.expander("Configure Gemini API Key", expanded=not st.session_state.api_k
     
     **Example Rating:**
     
-    *Advice: "Just take it like any normal day and deal with it."*  
-    *Circumstances: "Person is facing an emergency situation that is out of their control and is on the verge of mental and emotional breakdown"*
+    *Advice: "Just quit your job if you're not happy"*  
+    *Circumstances: "Person is facing mild workplace stress but has a family to support and no savings"*
     
     **Rating: 2/10** ❌  
-    *
-The advice "just take it like a normal day" can be problematic for someone experiencing an emotional breakdown. Here's why:
-Emotional intensity: Emotional breakdowns are characterized by intense emotions, which can't simply be "taken as usual." The individual may feel overwhelmed, anxious, or despairing, making it challenging to function normally.
-Lack of understanding: This advice might imply that the person is overreacting or being too sensitive, which can lead to feelings of shame, guilt, and isolation. Emotional breakdowns are not a sign of weakness; they're a natural response to overwhelming situations.
-Inadequate support: The "just take it like a normal day" approach might discourage individuals from seeking help or talking about their emotions. This can perpetuate the stigma surrounding mental health issues and prevent people from getting the support they need.
-Unrealistic expectations: Emotional breakdowns often require more than just "taking things as usual." They may necessitate taking time to process, reflect, and recharge.
-Instead of this advice, consider these alternatives:
-Acknowledge your emotions: Recognize that emotional breakdowns are a normal response to intense situations.
-Seek support: Reach out to trusted friends, family members, or mental health professionals for guidance and validation.
-Practice self-care: Engage in activities that promote relaxation, stress relief, and overall well-being (e.g., exercise, meditation, creative pursuits).
-Take small steps: Break down overwhelming tasks into smaller, manageable chunks to help regain control and confidence.
-Remember, emotional breakdowns are not a sign of weakness; they're an opportunity for growth, self-awareness, and healing.*
+    *This advice fails to consider financial responsibilities and lacks a planned approach to career transition...*
     """)
     
     api_key = st.text_input("Enter your Gemini API Key", type="password", 
@@ -72,8 +61,20 @@ if st.session_state.get('api_key_configured'):
         if advice and circumstances:
             with st.spinner("Analyzing the advice..."):
                 try:
-                    # Call Gemini API
-                    model = genai.GenerativeModel('gemini-pro')
+                    # Get available models
+                    models = genai.list_models()
+                    gemini_models = [m.name for m in models if 'gemini' in m.name]
+                    
+                    # Use the first available Gemini model (or specific one if found)
+                    model_name = 'models/gemini-1.0-pro'
+                    for m in gemini_models:
+                        if 'gemini-pro' in m:
+                            model_name = m
+                            break
+                    
+                    # Call Gemini API with correct model name
+                    model = genai.GenerativeModel(model_name)
+                    
                     prompt = f"""
                     Analyze this piece of advice: "{advice}"
                     
@@ -116,5 +117,15 @@ if st.session_state.get('api_key_configured'):
                     
                 except Exception as e:
                     st.error(f"Error: {str(e)}")
+                    st.error("If you're seeing a model error, the Gemini API may have changed. Try using a different model.")
+                    
+                    # Show available models for debugging
+                    try:
+                        models = genai.list_models()
+                        st.write("Available models:")
+                        for m in models:
+                            st.write(f"- {m.name}")
+                    except Exception as model_err:
+                        st.error(f"Couldn't list models: {str(model_err)}")
         else:
             st.warning("Please enter both advice and circumstances.")
